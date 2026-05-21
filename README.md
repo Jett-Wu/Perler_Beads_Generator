@@ -23,15 +23,19 @@ Live demo: https://jett-wu.github.io/Perler_Beads_Generator/
 
 ### 写实风格
 
-| 原图 | 工作台 | 导出图纸 |
-| --- | --- | --- |
-| ![Realistic source](docs/realistic-source.jpg) | ![Realistic workspace](docs/realistic-workspace.png) | ![Realistic exported pattern](docs/realistic-pattern.png) |
+<img src="docs/realistic-workspace.png" alt="写实风格工作台" width="100%">
+
+| 原图 | 导出图纸 |
+| --- | --- |
+| <img src="docs/realistic-source.jpg" alt="写实风格原图" width="100%"> | <img src="docs/realistic-pattern.png" alt="写实风格导出图纸" width="100%"> |
 
 ### 卡通风格
 
-| 原图 | 工作台 | 导出图纸 |
-| --- | --- | --- |
-| ![Cartoon source](docs/cartoon-source.png) | ![Cartoon workspace](docs/cartoon-workspace.png) | ![Cartoon exported pattern](docs/cartoon-pattern.png) |
+<img src="docs/cartoon-workspace.png" alt="卡通风格工作台" width="100%">
+
+| 原图 | 导出图纸 |
+| --- | --- |
+| <img src="docs/cartoon-source.png" alt="卡通风格原图" width="100%"> | <img src="docs/cartoon-pattern.png" alt="卡通风格导出图纸" width="100%"> |
 
 ### 空白工作区
 
@@ -160,15 +164,19 @@ A powerful Perler bead pattern editor for turning images into printable bead cha
 
 ### Realistic Style
 
-| Source | Workspace | Exported Pattern |
-| --- | --- | --- |
-| ![Realistic source](docs/realistic-source.jpg) | ![Realistic workspace](docs/realistic-workspace.png) | ![Realistic exported pattern](docs/realistic-pattern.png) |
+<img src="docs/realistic-workspace.png" alt="Realistic style workspace" width="100%">
+
+| Source | Exported Pattern |
+| --- | --- |
+| <img src="docs/realistic-source.jpg" alt="Realistic source image" width="100%"> | <img src="docs/realistic-pattern.png" alt="Realistic exported pattern" width="100%"> |
 
 ### Cartoon Style
 
-| Source | Workspace | Exported Pattern |
-| --- | --- | --- |
-| ![Cartoon source](docs/cartoon-source.png) | ![Cartoon workspace](docs/cartoon-workspace.png) | ![Cartoon exported pattern](docs/cartoon-pattern.png) |
+<img src="docs/cartoon-workspace.png" alt="Cartoon style workspace" width="100%">
+
+| Source | Exported Pattern |
+| --- | --- |
+| <img src="docs/cartoon-source.png" alt="Cartoon source image" width="100%"> | <img src="docs/cartoon-pattern.png" alt="Cartoon exported pattern" width="100%"> |
 
 ### Blank Workspace
 
