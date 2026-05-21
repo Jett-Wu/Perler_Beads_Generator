@@ -109,6 +109,7 @@ const ui: Record<Language, any> = {
         effectApplied: (name: string, count: number) => `已应用${name}，影响 ${count} 颗拼豆。`,
         mardBasic: 'MARD 基础版（221色）',
         mardComplete: 'MARD 完整版（291色）',
+        recentColors: '最近使用',
         layers: '图层',
         addLayer: '新建图层',
         deleteLayer: '删除',
@@ -126,6 +127,8 @@ const ui: Record<Language, any> = {
         beadsPerPack: '每包数量',
         perPackUnit: '颗/包',
         countedLayerTitle: '计入图层',
+        countAllLayers: '全部图层',
+        countCurrentLayer: '当前图层',
         packUnit: '包',
         noUsage: '暂无用量',
         brandCodes: '色号品牌',
@@ -158,13 +161,13 @@ const ui: Record<Language, any> = {
         heightFromRatio: '高度将按图片比例计算。',
         status: (width: number, height: number, beads: number, colors: number) => `${width} * ${height} - ${beads} 颗 - ${colors} 色`,
         panelStatus: (width: number, height: number, colors: number, beads: number, boards: number) => `${width} * ${height} - ${colors} 色 - ${beads} 颗 - ${boards} 块板`,
-        paletteCount: (count: number, group: string) => (group === 'all' ? `${count} 个颜色可用` : `${group} 组 ${count} 个颜色`),
         isolatedBeads: (count: number) => (count > 0 ? `${count} 颗拼豆无相邻，熨烫时留意。` : '没有无相邻拼豆。'),
         showIsolatedBeads: '显示无相邻拼豆',
         hideIsolatedBeads: '隐藏无相邻拼豆',
         eraserSize: '橡皮大小',
         removeScope: '消除范围',
-        removeSameColor: '同色',
+        removeSameConnected: '同色连续',
+        removeAllSameColor: '所有同色',
         removeConnected: '连续块',
         moveScope: '选中范围',
         moveLayer: '全图层',
@@ -311,6 +314,7 @@ const ui: Record<Language, any> = {
         effectApplied: (name: string, count: number) => `${name} applied to ${count} beads.`,
         mardBasic: 'MARD Basic (221 colors)',
         mardComplete: 'MARD Complete (291 colors)',
+        recentColors: 'Recent',
         layers: 'Layers',
         addLayer: 'New layer',
         deleteLayer: 'Delete',
@@ -328,6 +332,8 @@ const ui: Record<Language, any> = {
         beadsPerPack: 'Beads per pack',
         perPackUnit: 'beads/pack',
         countedLayerTitle: 'Counted layers',
+        countAllLayers: 'All layers',
+        countCurrentLayer: 'Current layer',
         packUnit: 'packs',
         noUsage: 'No usage yet',
         brandCodes: 'Brand codes',
@@ -360,13 +366,13 @@ const ui: Record<Language, any> = {
         heightFromRatio: 'Height is calculated from the image ratio.',
         status: (width: number, height: number, beads: number, colors: number) => `${width} * ${height} - ${beads} beads - ${colors} colors`,
         panelStatus: (width: number, height: number, colors: number, beads: number, boards: number) => `${width} * ${height} - ${colors} colors - ${beads} beads - ${boards} boards`,
-        paletteCount: (count: number, group: string) => (group === 'all' ? `${count} colors available` : `${count} colors in group ${group}`),
         isolatedBeads: (count: number) => (count > 0 ? `${count} beads have no neighbors; watch when fusing.` : 'No beads without neighbors.'),
         showIsolatedBeads: 'Show beads without neighbors',
         hideIsolatedBeads: 'Hide beads without neighbors',
         eraserSize: 'Eraser size',
         removeScope: 'Clear range',
-        removeSameColor: 'Same color',
+        removeSameConnected: 'Same area',
+        removeAllSameColor: 'All same',
         removeConnected: 'Connected',
         moveScope: 'Selection',
         moveLayer: 'Layer',
@@ -457,6 +463,7 @@ const defaultImportSettings = {
 };
 
 const defaultColorId = 'mard-h7';
+const defaultRecentColorIds = ['mard-h7', 'mard-h2'];
 const defaultAdjustments: AdjustmentSettings = {
   brightness: 0,
   contrast: 0,
@@ -486,13 +493,15 @@ export default function App() {
   const autoGenerateShouldCommitRef = useRef(false);
   const generationRequestRef = useRef(0);
   const adjustmentSessionRef = useRef<{ layerId: string | null; baseCells: Array<string | null> }>({ layerId: null, baseCells: [] });
+  const soloVisibilitySnapshotRef = useRef<Record<string, boolean> | null>(null);
   const [language, setLanguage] = useState<Language>(() => (localStorage.getItem(languageKey) === 'en' ? 'en' : 'zh'));
   const text = ui[language];
   const [project, setProject] = useState<BeadProject>(() => loadDraft() ?? createProject());
   const [selectedColorId, setSelectedColorId] = useState(defaultColorId);
+  const [recentColorIds, setRecentColorIds] = useState(defaultRecentColorIds);
   const [tool, setTool] = useState<ToolId>('pencil');
   const [eraserSize, setEraserSize] = useState(0);
-  const [removeMode, setRemoveMode] = useState<RemoveMode>('connected');
+  const [removeMode, setRemoveMode] = useState<RemoveMode>('same-connected');
   const [moveMode, setMoveMode] = useState<MoveMode>('layer');
   const [mirrorMode, setMirrorMode] = useState<MoveMode>('layer');
   const [mirrorDirection, setMirrorDirection] = useState<MirrorDirection>('horizontal');
@@ -568,6 +577,10 @@ export default function App() {
   );
   const selectedColor = getColor(selectedColorId);
   const activePalette = paletteMode === 'basic' ? basicPalette : completePalette;
+  const recentColors = recentColorIds.flatMap((id) => {
+    const color = activePalette.find((item) => item.id === id);
+    return color ? [color] : [];
+  });
   const paletteGroups = useMemo(
     () => [
       { id: 'all', label: 'All' },
@@ -682,6 +695,17 @@ export default function App() {
   }, [project.width, project.height]);
 
   useEffect(() => {
+    setNotice((current: string) => {
+      if (current === ui.zh.workspaceReady || current === ui.en.workspaceReady) return text.workspaceReady;
+      const zhGenerated = current.match(/^(\d+) 色 - (\d+) 颗 - 可编辑图案已生成。$/);
+      if (zhGenerated) return `${zhGenerated[1]} colors - ${zhGenerated[2]} beads - editable pattern ready.`;
+      const enGenerated = current.match(/^(\d+) colors - (\d+) beads - editable pattern ready\.$/);
+      if (enGenerated) return `${enGenerated[1]} 色 - ${enGenerated[2]} 颗 - 可编辑图案已生成。`;
+      return current;
+    });
+  }, [language, text.workspaceReady]);
+
+  useEffect(() => {
     if (!activePalette.some((color) => color.id === selectedColorId)) {
       setSelectedColorId(activePalette[0].id);
     }
@@ -716,6 +740,12 @@ export default function App() {
 
   function updateProject(next: BeadProject) {
     setProject({ ...next, updatedAt: new Date().toISOString() });
+  }
+
+  function selectColor(colorId: string, options: { updateRecent?: boolean } = {}) {
+    setSelectedColorId(colorId);
+    if (options.updateRecent === false) return;
+    setRecentColorIds((current) => [colorId, ...current.filter((id) => id !== colorId)].slice(0, 7));
   }
 
   function updateCells(cells: Array<string | null>) {
@@ -838,6 +868,7 @@ export default function App() {
   }
 
   function startBlank(width = 52, height = 52) {
+    soloVisibilitySnapshotRef.current = null;
     setProject(createProject(width, height));
     setPast([]);
     setFuture([]);
@@ -846,6 +877,7 @@ export default function App() {
     resetAdjustments();
     resetImportSettings();
     setSelectedColorId(defaultColorId);
+    setRecentColorIds(defaultRecentColorIds);
     setPaletteGroup('all');
     setPendingFile(null);
     setPendingImageUrl((current) => {
@@ -934,8 +966,15 @@ export default function App() {
 
   async function generateFromImage(options: { recordHistory?: boolean; automatic?: boolean } = {}) {
     if (!pendingFile) return;
+    if (activeLayer.locked) {
+      setNotice(text.lockedCanvasHint);
+      return;
+    }
     const requestId = generationRequestRef.current + 1;
     generationRequestRef.current = requestId;
+    const targetLayerId = activeLayer.id;
+    const sourceProject = project;
+    const sourceLayers = layers;
     setIsGenerating(true);
     setNotice(language === 'zh' ? '正在本地更新拼豆图案...' : 'Updating bead pattern locally...');
     try {
@@ -951,13 +990,29 @@ export default function App() {
       });
       if (requestId !== generationRequestRef.current) return;
       if (options.recordHistory) commitHistory();
-      const next = withCells(
-        createProject(result.width, result.height, pendingFile.name.replace(/\.[^.]+$/, '') || 'Uploaded Pattern'),
-        result.cells,
-        result.width,
-        result.height,
-      );
-      updateProject(next);
+      const nextWidth = Math.max(sourceProject.width, result.width);
+      const nextHeight = Math.max(sourceProject.height, result.height);
+      const nextLayers = sourceLayers.map((layer) => {
+        if (layer.id === targetLayerId) {
+          return {
+            ...layer,
+            cells: resizeCells(result.cells, result.width, result.height, nextWidth, nextHeight),
+          };
+        }
+        return {
+          ...layer,
+          cells: resizeCells(layer.cells, sourceProject.width, sourceProject.height, nextWidth, nextHeight),
+        };
+      });
+      const nextProject = {
+        ...sourceProject,
+        width: nextWidth,
+        height: nextHeight,
+        activeLayerId: targetLayerId,
+        layers: nextLayers,
+        cells: composeVisibleCells(nextLayers, nextWidth, nextHeight),
+      };
+      updateProject(nextProject);
       setNotice(
         language === 'zh'
           ? `${result.colorsUsed} 色 - ${result.totalBeads} 颗 - 可编辑图案已生成。`
@@ -982,6 +1037,7 @@ export default function App() {
     if (!imported.width || !imported.height || !Array.isArray(imported.cells)) {
       throw new Error(text.invalidRecord);
     }
+    soloVisibilitySnapshotRef.current = null;
     setProject(normalizeProject(imported));
     setPast([]);
     setFuture([]);
@@ -1049,6 +1105,58 @@ export default function App() {
     updateProject(withLayers(project, layers.map((layer) => (layer.id === layerId ? { ...layer, ...changes } : layer))));
   }
 
+  function updateUsageLayerSelection(includedLayerIds: Set<string>) {
+    const nextLayers = layers.map((layer) => ({
+      ...layer,
+      includeInUsage: includedLayerIds.has(layer.id),
+    }));
+    const changed = nextLayers.some((layer, index) => layer.includeInUsage !== layers[index].includeInUsage);
+    if (!changed) return;
+    commitHistory();
+    updateProject(withLayers(project, nextLayers, project.activeLayerId));
+  }
+
+  function toggleUsageLayer(layerId: string) {
+    const includedLayerIds = new Set(countedLayers.map((layer) => layer.id));
+    if (includedLayerIds.has(layerId)) {
+      includedLayerIds.delete(layerId);
+    } else {
+      includedLayerIds.add(layerId);
+    }
+    updateUsageLayerSelection(includedLayerIds);
+  }
+
+  function toggleActiveLayerOnly() {
+    const shouldEnable = !project.settings.showActiveLayerOnly;
+    if (shouldEnable) {
+      soloVisibilitySnapshotRef.current = Object.fromEntries(layers.map((layer) => [layer.id, layer.visible]));
+      const soloLayers = layers.map((layer) => ({
+        ...layer,
+        visible: layer.id === activeLayer.id,
+      }));
+      updateProject({
+        ...project,
+        settings: { ...project.settings, showActiveLayerOnly: true },
+        layers: soloLayers,
+        cells: composeVisibleCells(soloLayers, project.width, project.height),
+      });
+      return;
+    }
+
+    const snapshot = soloVisibilitySnapshotRef.current;
+    soloVisibilitySnapshotRef.current = null;
+    const restoredLayers = layers.map((layer) => ({
+      ...layer,
+      visible: snapshot?.[layer.id] ?? layer.visible,
+    }));
+    updateProject({
+      ...project,
+      settings: { ...project.settings, showActiveLayerOnly: false },
+      layers: restoredLayers,
+      cells: composeVisibleCells(restoredLayers, project.width, project.height),
+    });
+  }
+
   function deleteLayer(layerId: string) {
     if (layers.length <= 1) return;
     commitHistory();
@@ -1082,7 +1190,20 @@ export default function App() {
   }
 
   function selectLayer(layerId: string) {
-    updateProject({ ...project, activeLayerId: layerId });
+    if (!project.settings.showActiveLayerOnly) {
+      updateProject({ ...project, activeLayerId: layerId });
+      return;
+    }
+    const soloLayers = layers.map((layer) => ({
+      ...layer,
+      visible: layer.id === layerId,
+    }));
+    updateProject({
+      ...project,
+      activeLayerId: layerId,
+      layers: soloLayers,
+      cells: composeVisibleCells(soloLayers, project.width, project.height),
+    });
   }
 
   function setBeadsPerPack(value: number) {
@@ -1150,14 +1271,19 @@ export default function App() {
   const defaultPrintNickname = useMemo(() => {
     const date = new Date();
     const stamp = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}${String(date.getDate()).padStart(2, '0')}${String(date.getHours()).padStart(2, '0')}${String(date.getMinutes()).padStart(2, '0')}`;
-    return `拼豆图纸_${stamp}`;
-  }, []);
+    return language === 'zh' ? `拼豆图纸_${stamp}` : `Perler_Beads_${stamp}`;
+  }, [language]);
 
   function exportPrintPattern() {
+    const exportOptions = {
+      ...printExportOptions,
+      projectName: printExportOptions.projectName?.trim() || defaultPrintNickname,
+      layerLabelPrefix: language === 'en' ? 'Layer' : '图层',
+    };
     if (printExportOptions.format === 'pdf') {
-      downloadPrintPdf(project, printExportOptions);
+      downloadPrintPdf(project, exportOptions);
     } else {
-      downloadPrintPng(project, printExportOptions);
+      downloadPrintPng(project, exportOptions);
     }
     setShowPrintExportPanel(false);
   }
@@ -1628,10 +1754,10 @@ export default function App() {
         )}
         {tool === 'remove' && showRemoveOptions && (
           <div className="tool-options remove-options" onMouseLeave={() => setShowRemoveOptions(false)}>
-            <div className="right-click-toggle compact" aria-label={text.removeScope}>
+            <div className="right-click-toggle compact remove-scope-toggle" aria-label={text.removeScope}>
               <span>{text.removeScope}</span>
               <div>
-                {(['connected', 'same-color'] as RemoveMode[]).map((mode) => (
+                {(['same-connected', 'all-same-color', 'connected'] as RemoveMode[]).map((mode) => (
                   <button
                     key={mode}
                     className={removeMode === mode ? 'active' : ''}
@@ -1639,7 +1765,11 @@ export default function App() {
                     aria-pressed={removeMode === mode}
                     onClick={() => setRemoveMode(mode)}
                   >
-                    {mode === 'same-color' ? text.removeSameColor : text.removeConnected}
+                    {mode === 'same-connected'
+                      ? text.removeSameConnected
+                      : mode === 'all-same-color'
+                        ? text.removeAllSameColor
+                        : text.removeConnected}
                   </button>
                 ))}
               </div>
@@ -1883,7 +2013,7 @@ export default function App() {
         }}
         onPastePattern={() => setNotice(text.pastedPattern)}
         onPickColor={(colorId) => {
-          setSelectedColorId(colorId);
+          selectColor(colorId);
           setTool('pencil');
           setShowPencilOptions(false);
           setShowEraserOptions(false);
@@ -1952,10 +2082,30 @@ export default function App() {
             <h2>{text.palette}</h2>
             <div className="palette-selected-card">
               <span style={{ backgroundColor: selectedColor?.hex }} />
-              <div>
+              <div className="palette-selected-main">
                 <strong>{selectedColor ? displayCode(selectedColor) : ''}</strong>
                 <small>{selectedColor ? displayName(selectedColor) : ''}</small>
+              </div>
+              <div className="palette-selected-hex">
                 <small>{selectedColor?.hex}</small>
+              </div>
+            </div>
+            <div className="recent-colors-field">
+              <span>{text.recentColors}</span>
+              <div className="recent-color-row">
+                {recentColors.map((color) => (
+                  <button
+                    key={color.id}
+                    type="button"
+                    className={selectedColorId === color.id ? 'active' : ''}
+                    title={`${displayCode(color)} ${displayName(color)}`}
+                    aria-label={`${text.recentColors} ${displayCode(color)}`}
+                    onClick={() => selectColor(color.id, { updateRecent: false })}
+                  >
+                    <span style={{ backgroundColor: color.hex }} />
+                    <small>{displayCode(color)}</small>
+                  </button>
+                ))}
               </div>
             </div>
             <div className="readonly-brand-field">
@@ -1976,9 +2126,6 @@ export default function App() {
                 </button>
               ))}
             </div>
-            <div className="palette-count">
-              {text.paletteCount(visiblePalette.length, paletteGroup)}
-            </div>
             <div className="palette-grid">
               {visiblePalette.map((color) => (
                 <button
@@ -1986,7 +2133,7 @@ export default function App() {
                   className={selectedColorId === color.id ? 'swatch active' : 'swatch'}
                   title={`${displayCode(color)} ${displayName(color)}`}
                   onClick={() => {
-                    setSelectedColorId(color.id);
+                    selectColor(color.id);
                   }}
                 >
                   <span style={{ backgroundColor: color.hex }} />
@@ -2007,15 +2154,7 @@ export default function App() {
               className={project.settings.showActiveLayerOnly ? 'layer-solo-toggle active' : 'layer-solo-toggle'}
               type="button"
               aria-pressed={project.settings.showActiveLayerOnly}
-              onClick={() =>
-                updateProject({
-                  ...project,
-                  settings: {
-                    ...project.settings,
-                    showActiveLayerOnly: !project.settings.showActiveLayerOnly,
-                  },
-                })
-              }
+              onClick={toggleActiveLayerOnly}
             >
               <EyeIcon visible={project.settings.showActiveLayerOnly} />
               <span>{text.showActiveLayerOnly}</span>
@@ -2239,17 +2378,39 @@ export default function App() {
                 <strong>{text.countedLayerTitle}</strong>
                 <span>{text.countedLayers(countedLayers.length)}</span>
               </div>
-              <div className="usage-layer-chips">
-                {countedLayers.length > 0 ? (
-                  countedLayers.map((layer) => (
-                    <span key={layer.id}>
-                      {layerDisplayName(layer, layers.findIndex((item) => item.id === layer.id))}
-                    </span>
-                  ))
-                ) : (
-                  <span>{text.noCountedLayers}</span>
-                )}
+              <div className="usage-layer-actions">
+                <button
+                  type="button"
+                  className={countedLayers.length === layers.length ? 'active' : ''}
+                  onClick={() => updateUsageLayerSelection(new Set(layers.map((layer) => layer.id)))}
+                >
+                  {text.countAllLayers}
+                </button>
+                <button
+                  type="button"
+                  className={countedLayers.length === 1 && countedLayers[0]?.id === activeLayer.id ? 'active' : ''}
+                  onClick={() => updateUsageLayerSelection(new Set([activeLayer.id]))}
+                >
+                  {text.countCurrentLayer}
+                </button>
               </div>
+              <div className="usage-layer-chips">
+                {layers.map((layer) => {
+                  const isIncluded = layer.includeInUsage;
+                  return (
+                    <button
+                      key={layer.id}
+                      type="button"
+                      className={isIncluded ? 'active' : ''}
+                      aria-pressed={isIncluded}
+                      onClick={() => toggleUsageLayer(layer.id)}
+                    >
+                      {layerDisplayName(layer, layers.findIndex((item) => item.id === layer.id))}
+                    </button>
+                  );
+                })}
+              </div>
+              {countedLayers.length === 0 && <div className="usage-no-layers">{text.noCountedLayers}</div>}
               {(usage.length > 32 || isolatedBeads > 0) && (
                 <div className="usage-notes">
                   {usage.length > 32 && <span>{text.manyColors}</span>}

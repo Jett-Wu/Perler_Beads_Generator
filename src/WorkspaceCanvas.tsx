@@ -413,9 +413,11 @@ export default function WorkspaceCanvas({
       if (!activeCells[startIndex]) return;
       const next = activeCells.slice();
       const indices =
-        removeMode === 'same-color'
+        removeMode === 'same-connected'
           ? collectConnectedCellIndices(activeCells, project.width, project.height, cell.x, cell.y)
-          : collectConnectedOccupiedIndices(activeCells, project.width, project.height, cell.x, cell.y);
+          : removeMode === 'all-same-color'
+            ? collectSameColorIndices(activeCells, cell.x, cell.y, project.width)
+            : collectConnectedOccupiedIndices(activeCells, project.width, project.height, cell.x, cell.y);
       indices.forEach((index) => {
         next[index] = null;
       });
@@ -1498,9 +1500,11 @@ function drawToolImpactPreview(
     const startIndex = hoverPoint.cell.y * project.width + hoverPoint.cell.x;
     if (!cells[startIndex]) return;
     const indices =
-      removeMode === 'same-color'
+      removeMode === 'same-connected'
         ? collectConnectedCellIndices(cells, project.width, project.height, hoverPoint.cell.x, hoverPoint.cell.y)
-        : collectConnectedOccupiedIndices(cells, project.width, project.height, hoverPoint.cell.x, hoverPoint.cell.y);
+        : removeMode === 'all-same-color'
+          ? collectSameColorIndices(cells, hoverPoint.cell.x, hoverPoint.cell.y, project.width)
+          : collectConnectedOccupiedIndices(cells, project.width, project.height, hoverPoint.cell.x, hoverPoint.cell.y);
     drawCellSet(context, indices, project.width, cellSize, {
       fill: 'rgba(185, 58, 50, 0.065)',
       stroke: 'rgba(185, 58, 50, 0.34)',
@@ -1784,6 +1788,17 @@ function collectConnectedCellIndices(
     stack.push([cx + 1, cy], [cx - 1, cy], [cx, cy + 1], [cx, cy - 1]);
   }
   return [...seen];
+}
+
+function collectSameColorIndices(
+  cells: Array<string | null>,
+  x: number,
+  y: number,
+  width: number,
+): number[] {
+  const target = cells[y * width + x];
+  if (!target) return [];
+  return cells.flatMap((colorId, index) => (colorId === target ? [index] : []));
 }
 
 function createClipboardPattern(cells: Array<string | null>, width: number, indices: number[]): ClipboardPattern {

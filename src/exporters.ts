@@ -8,6 +8,8 @@ export type PrintExportOptions = {
   showGuideLines: boolean;
   projectName?: string;
   authorName?: string;
+  layerName?: string;
+  layerLabelPrefix?: string;
 };
 
 const PRINT_EXPORT_PPI = 330;
@@ -68,19 +70,25 @@ export function downloadUsageWorkbook(project: BeadProject): void {
 }
 
 export function downloadPrintPng(project: BeadProject, options: PrintExportOptions = { showColorCodes: true, showGuideLines: true }): void {
-  const canvas = renderPrintCanvas(project, options);
-  canvas.toBlob((blob) => {
-    if (!blob) return;
-    downloadBlob(`${safeName(printDisplayName(options))}.png`, blob, 'image/png');
+  printLayerProjects(project, options).forEach((item) => {
+    const layerOptions = { ...options, layerName: item.layerName };
+    const canvas = renderPrintCanvas(item.project, layerOptions);
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      downloadBlob(`${printFileName(layerOptions)}.png`, blob, 'image/png');
+    });
   });
 }
 
 export function downloadPrintPdf(project: BeadProject, options: PrintExportOptions = { showColorCodes: true, showGuideLines: true }): void {
-  const canvas = renderPrintCanvas(project, options);
-  const dataUrl = canvas.toDataURL('image/jpeg', 0.98);
-  const jpegBytes = dataUrlToBytes(dataUrl);
-  const pdf = createSingleImagePdf(jpegBytes, canvas.width, canvas.height, PRINT_EXPORT_PPI);
-  downloadBlob(`${safeName(printDisplayName(options))}.pdf`, pdf, 'application/pdf');
+  printLayerProjects(project, options).forEach((item) => {
+    const layerOptions = { ...options, layerName: item.layerName };
+    const canvas = renderPrintCanvas(item.project, layerOptions);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.98);
+    const jpegBytes = dataUrlToBytes(dataUrl);
+    const pdf = createSingleImagePdf(jpegBytes, canvas.width, canvas.height, PRINT_EXPORT_PPI);
+    downloadBlob(`${printFileName(layerOptions)}.pdf`, pdf, 'application/pdf');
+  });
 }
 
 function renderPrintCanvas(project: BeadProject, options: PrintExportOptions): HTMLCanvasElement {
@@ -312,6 +320,43 @@ function summarizeProjectUsage(project: BeadProject): Array<{ color: NonNullable
       return color ? [{ color, count }] : [];
     })
     .sort((a, b) => b.count - a.count || a.color.primaryCode.localeCompare(b.color.primaryCode));
+}
+
+function printLayerProjects(project: BeadProject, options: PrintExportOptions): Array<{ project: BeadProject; layerName?: string }> {
+  const layers = project.layers ?? [];
+  const nonEmptyLayers = layers
+    .map((layer, index) => ({ layer, index }))
+    .filter(({ layer }) => layer.cells.some(Boolean));
+  if (nonEmptyLayers.length <= 1) return [{ project }];
+  return nonEmptyLayers.map(({ layer, index }) => {
+    const layerName = printLayerName(layer, index, options.layerLabelPrefix);
+    const layerCells = normalizeLayerCells(layer.cells, project.width, project.height);
+    const printLayer = {
+      ...layer,
+      visible: true,
+      cells: layerCells,
+    };
+    return {
+      layerName,
+      project: {
+        ...project,
+        cells: layerCells,
+        layers: [printLayer],
+        activeLayerId: printLayer.id,
+      },
+    };
+  });
+}
+
+function printLayerName(layer: BeadLayer, index: number, layerLabelPrefix = '图层'): string {
+  const fallback = layerLabelPrefix === 'Layer' ? `Layer ${index + 1}` : `${layerLabelPrefix}${index + 1}`;
+  const custom = layer.customName && layer.name.trim() ? layer.name.trim() : '';
+  return custom ? `${fallback}-${custom}` : fallback;
+}
+
+function normalizeLayerCells(cells: Array<string | null>, width: number, height: number): Array<string | null> {
+  const length = width * height;
+  return Array.from({ length }, (_, index) => cells[index] ?? null);
 }
 
 type UsageWorkbookRow = Array<string | number>;
@@ -609,7 +654,13 @@ function safeName(name: string): string {
 }
 
 function printDisplayName(options: PrintExportOptions): string {
-  return options.projectName?.trim() || defaultPrintName();
+  const baseName = options.projectName?.trim() || defaultPrintName();
+  return options.layerName ? `${baseName} ${options.layerName}` : baseName;
+}
+
+function printFileName(options: PrintExportOptions): string {
+  const baseName = options.projectName?.trim() || defaultPrintName();
+  return safeName(options.layerName ? `${baseName}_${options.layerName}` : baseName);
 }
 
 function defaultPrintName(): string {

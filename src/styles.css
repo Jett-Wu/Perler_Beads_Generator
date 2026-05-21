@@ -1674,6 +1674,36 @@ button:focus-visible {
   background: transparent;
 }
 
+.right-click-toggle.remove-scope-toggle {
+  gap: 8px;
+}
+
+.right-click-toggle.remove-scope-toggle > span {
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(190, 177, 154, 0.48);
+  color: #6d7880;
+}
+
+.right-click-toggle.remove-scope-toggle div {
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+
+.right-click-toggle.remove-scope-toggle button {
+  min-height: 30px;
+  padding: 0 12px;
+  border: 1px solid rgba(190, 177, 154, 0.62);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.48);
+  justify-content: center;
+}
+
+.right-click-toggle.remove-scope-toggle button.active {
+  border-color: var(--accent);
+  background: var(--accent);
+  box-shadow: 0 6px 14px rgba(23, 101, 106, 0.16);
+}
+
 .tool-button {
   position: relative;
   display: grid;
@@ -2265,12 +2295,16 @@ button:focus-visible {
 }
 
 .palette-section {
+  display: flex;
   flex: 0 0 auto;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
 }
 
 .palette-section .palette-grid {
   flex: 0 0 auto;
-  max-height: clamp(220px, 36dvh, 460px);
+  max-height: clamp(250px, 42dvh, 480px);
   min-height: 0;
 }
 
@@ -2278,6 +2312,20 @@ button:focus-visible {
 .usage-section,
 .adjustment-section {
   flex: 0 0 auto;
+}
+
+.right-panel:has(.layers-section),
+.right-panel:has(.usage-section) {
+  overflow: hidden;
+}
+
+.layers-section,
+.usage-section {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .panel-section h2 {
@@ -2418,8 +2466,10 @@ button:focus-visible {
 }
 
 .swatch.active {
-  outline: 3px solid var(--accent);
-  outline-offset: 2px;
+  border-color: var(--accent);
+  box-shadow:
+    inset 0 0 0 2px rgba(23, 101, 106, 0.95),
+    0 0 0 1px rgba(23, 101, 106, 0.12);
 }
 
 .swatch span {
@@ -2439,11 +2489,14 @@ button:focus-visible {
 }
 
 .palette-selected-card {
+  justify-self: stretch;
   display: grid;
-  grid-template-columns: 68px minmax(0, 1fr);
+  grid-template-columns: 62px minmax(0, 1fr) auto;
   gap: 12px;
   align-items: center;
-  padding: 10px;
+  width: 100%;
+  min-height: 66px;
+  padding: 8px 10px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--surface);
@@ -2451,28 +2504,47 @@ button:focus-visible {
 }
 
 .palette-selected-card > span {
-  width: 68px;
-  height: 52px;
+  width: 62px;
+  height: 46px;
   border: 1px solid rgba(17, 24, 39, 0.18);
   border-radius: 7px;
 }
 
-.palette-selected-card div {
+.palette-selected-main {
   display: grid;
-  gap: 3px;
+  gap: 4px;
   min-width: 0;
 }
 
+.palette-selected-hex {
+  justify-self: end;
+  display: inline-grid;
+  min-width: 88px;
+  padding: 5px 8px;
+  border: 1px solid rgba(199, 185, 160, 0.58);
+  border-radius: 7px;
+  background: rgba(250, 247, 239, 0.72);
+  text-align: center;
+}
+
 .palette-selected-card strong {
-  font-size: var(--font-size-display);
+  font-size: var(--font-size-title);
   font-weight: var(--weight-semibold);
   line-height: var(--line-tight);
 }
 
 .palette-selected-card small {
   overflow: hidden;
+  font-size: var(--font-size-caption);
+  line-height: 1.15;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.palette-selected-hex small {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: var(--font-size-small);
+  font-weight: var(--weight-semibold);
 }
 
 .readonly-brand-field {
@@ -2484,6 +2556,61 @@ button:focus-visible {
 
 .readonly-brand-field select {
   width: 100%;
+}
+
+.recent-colors-field {
+  display: grid;
+  gap: 6px;
+  color: var(--text-muted);
+  font-size: var(--font-size-small);
+  font-weight: var(--weight-semibold);
+}
+
+.recent-color-row {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.recent-color-row button {
+  display: grid;
+  grid-template-rows: 26px auto;
+  gap: 3px;
+  min-width: 0;
+  min-height: 48px;
+  padding: 4px;
+  border-color: var(--line);
+  border-radius: 7px;
+  background: rgba(255, 254, 249, 0.82);
+  color: var(--text);
+}
+
+.recent-color-row button:hover:not(:disabled) {
+  border-color: rgba(23, 101, 106, 0.34);
+  background: #fffefa;
+}
+
+.recent-color-row button.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(23, 101, 106, 0.16);
+}
+
+.recent-color-row button > span {
+  display: block;
+  width: 100%;
+  height: 26px;
+  border: 1px solid rgba(17, 24, 39, 0.16);
+  border-radius: 5px;
+}
+
+.recent-color-row small {
+  overflow: hidden;
+  color: #111827;
+  font-size: var(--font-size-caption);
+  font-weight: var(--weight-semibold);
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .palette-filter {
@@ -2504,11 +2631,6 @@ button:focus-visible {
   border-color: var(--accent);
   background: var(--accent);
   color: #ffffff;
-}
-
-.palette-count {
-  color: var(--text-muted);
-  font-size: var(--font-size-small);
 }
 
 .segmented {
@@ -2644,14 +2766,21 @@ button:focus-visible {
   }
 
   .palette-selected-card {
-    grid-template-columns: 54px minmax(0, 1fr);
-    gap: 10px;
-    padding: 9px;
+    grid-template-columns: 52px minmax(0, 1fr) auto;
+    gap: 8px;
+    width: 100%;
+    min-height: 58px;
+    padding: 6px 8px;
   }
 
   .palette-selected-card > span {
-    width: 54px;
-    height: 42px;
+    width: 52px;
+    height: 38px;
+  }
+
+  .palette-selected-hex {
+    min-width: 76px;
+    padding: 4px 6px;
   }
 
   .palette-selected-card strong {
@@ -2665,6 +2794,10 @@ button:focus-visible {
   .palette-grid {
     grid-template-columns: repeat(auto-fill, minmax(46px, 1fr));
     gap: 6px;
+  }
+
+  .recent-color-row {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
   }
 
   .swatch {
@@ -2849,19 +2982,66 @@ button:focus-visible {
   display: flex;
   flex-wrap: wrap;
   gap: 5px;
-  max-height: 56px;
+  max-height: 62px;
   overflow: auto;
 }
 
-.usage-layer-chips span {
+.usage-layer-chips button {
+  cursor: pointer;
   max-width: 100%;
-  padding: 3px 7px;
+  min-height: 24px;
+  padding: 3px 8px;
   border: 1px solid rgba(190, 177, 154, 0.68);
   border-radius: 999px;
   background: #ffffff;
   color: var(--text);
   font-size: var(--font-size-caption);
+  font-weight: var(--weight-semibold);
   line-height: 1.2;
+}
+
+.usage-layer-chips button:hover:not(:disabled) {
+  border-color: rgba(23, 101, 106, 0.34);
+  background: rgba(240, 250, 249, 0.72);
+  color: var(--accent);
+}
+
+.usage-layer-chips button.active {
+  border-color: rgba(23, 101, 106, 0.72);
+  background: rgba(231, 248, 246, 0.94);
+  color: var(--accent);
+}
+
+.usage-layer-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.usage-layer-actions button {
+  min-height: 30px;
+  padding: 0 8px;
+  border-color: rgba(190, 177, 154, 0.72);
+  background: rgba(255, 255, 255, 0.64);
+  font-size: var(--font-size-small);
+  font-weight: var(--weight-semibold);
+}
+
+.usage-layer-actions button:hover:not(:disabled) {
+  border-color: rgba(23, 101, 106, 0.32);
+  background: rgba(240, 250, 249, 0.72);
+  color: var(--accent);
+}
+
+.usage-layer-actions button.active {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #ffffff;
+}
+
+.usage-no-layers {
+  color: var(--text-muted);
+  font-size: var(--font-size-small);
 }
 
 .usage-notes {
@@ -2913,9 +3093,14 @@ button:focus-visible {
 
 .usage-list {
   display: grid;
+  flex: 1 1 auto;
   gap: 6px;
-  max-height: none;
+  align-content: start;
+  grid-auto-rows: max-content;
+  min-height: 0;
+  padding-right: 3px;
   overflow: auto;
+  overscroll-behavior: contain;
 }
 
 .usage-list button {
@@ -3209,7 +3394,14 @@ button:focus-visible {
 
 .layer-list {
   display: grid;
+  flex: 1 1 auto;
   gap: 7px;
+  align-content: start;
+  grid-auto-rows: max-content;
+  min-height: 0;
+  padding-right: 3px;
+  overflow: auto;
+  overscroll-behavior: contain;
 }
 
 .layer-row {

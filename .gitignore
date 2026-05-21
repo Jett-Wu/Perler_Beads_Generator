@@ -27,7 +27,10 @@ pnpm-debug.log*
 # TypeScript / Vite caches
 *.tsbuildinfo
 .vite/
+.cache/
 coverage/
+playwright-report/
+test-results/
 
 # OS and editor files
 .DS_Store
@@ -39,3 +42,4 @@ Thumbs.db
 release-smoke*.png
 *_release_smoke.png
 *.local
+*.local.*
