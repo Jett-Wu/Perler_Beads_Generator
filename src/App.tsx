@@ -6,7 +6,7 @@ import { imageFileToBeads } from './imageToBeads';
 import { basicPalette, colorDistance, completePalette, getColor, nearestPaletteColor } from './palette';
 import { composeVisibleCells, createLayer, createProject, loadDraft, normalizeProject, saveDraft, withCells, withLayers } from './project';
 import { findIsolatedBeads, summarizeUsage } from './usage';
-import type { ArrowKind, BackgroundMode, BeadProject, ClipboardPattern, CopyMode, GenerationStyle, MirrorDirection, MoveMode, RemoveMode, RightClickAction, ShapeFillMode, ShapeKind, ToolId } from './types';
+import type { ArrowKind, BackgroundMode, BeadProject, ClipboardPattern, CopyMode, GenerationStyle, MirrorDirection, MoveMode, RemoveMode, RightClickAction, ShapeFillMode, ShapeKind, TextDirection, ToolId } from './types';
 
 const { useEffect, useMemo, useRef, useState } = React;
 
@@ -191,6 +191,13 @@ const ui: Record<Language, any> = {
         arrowSingle: '单向',
         arrowDouble: '双向',
         arrowBlock: '粗箭头',
+        textContent: '文字内容',
+        textDirection: '排列方向',
+        textHorizontal: '横排',
+        textVertical: '竖排',
+        textSize: '文字高度',
+        textSpacing: '文字间距',
+        textPlaceholder: '文字 / 数字 / 字母 / 符号',
         clipboardPreview: '剪贴预览',
         clipboardEmpty: <>先用复制工具选择<br />复制范围</>,
         clipboardSize: (width: number, height: number, beads: number) => `${width} * ${height} - ${beads} 颗`,
@@ -217,6 +224,7 @@ const ui: Record<Language, any> = {
             paste: { title: '粘贴', hint: '粘贴已复制图案' },
             mirror: { title: '镜像', hint: '翻转当前图层图案' },
             shape: { title: '形状', hint: '绘制基础几何图形' },
+            text: { title: '文字', hint: '插入点阵文字' },
             pan: { title: '拖动', hint: '拖动画布' },
         },
     },
@@ -396,6 +404,13 @@ const ui: Record<Language, any> = {
         arrowSingle: 'Single',
         arrowDouble: 'Double',
         arrowBlock: 'Block',
+        textContent: 'Text',
+        textDirection: 'Direction',
+        textHorizontal: 'Horizontal',
+        textVertical: 'Vertical',
+        textSize: 'Text height',
+        textSpacing: 'Spacing',
+        textPlaceholder: 'Text / numbers / letters / symbols',
         clipboardPreview: 'Clipboard',
         clipboardEmpty: 'Copy a pattern first',
         clipboardSize: (width: number, height: number, beads: number) => `${width} * ${height} - ${beads} beads`,
@@ -422,6 +437,7 @@ const ui: Record<Language, any> = {
             paste: { title: 'Paste', hint: 'Paste copied pattern' },
             mirror: { title: 'Mirror', hint: 'Flip active layer artwork' },
             shape: { title: 'Shape', hint: 'Draw basic geometry' },
+            text: { title: 'Text', hint: 'Insert dot text' },
             pan: { title: 'Drag', hint: 'Drag canvas' },
         },
     },
@@ -439,6 +455,7 @@ const tools: Array<{ id: ToolId }> = [
   { id: 'paste' },
   { id: 'mirror' },
   { id: 'shape' },
+  { id: 'text' },
   { id: 'pan' },
 ];
 
@@ -508,6 +525,10 @@ export default function App() {
   const [shapeKind, setShapeKind] = useState<ShapeKind>('line');
   const [shapeFillMode, setShapeFillMode] = useState<ShapeFillMode>('outline');
   const [arrowKind, setArrowKind] = useState<ArrowKind>('single');
+  const [textToolValue, setTextToolValue] = useState('ABC');
+  const [textToolDirection, setTextToolDirection] = useState<TextDirection>('horizontal');
+  const [textToolSize, setTextToolSize] = useState(17);
+  const [textToolSpacing, setTextToolSpacing] = useState(1);
   const [showPrintExportPanel, setShowPrintExportPanel] = useState(false);
   const [printExportOptions, setPrintExportOptions] = useState<PrintExportOptions>({
     format: 'png',
@@ -523,6 +544,7 @@ export default function App() {
   const [showMoveOptions, setShowMoveOptions] = useState(false);
   const [showMirrorOptions, setShowMirrorOptions] = useState(false);
   const [showShapeOptions, setShowShapeOptions] = useState(false);
+  const [showTextOptions, setShowTextOptions] = useState(false);
   const [showClipboardOptions, setShowClipboardOptions] = useState(false);
   const [showPanOptions, setShowPanOptions] = useState(false);
   const [clipboardPattern, setClipboardPattern] = useState<ClipboardPattern | null>(null);
@@ -746,6 +768,20 @@ export default function App() {
     setSelectedColorId(colorId);
     if (options.updateRecent === false) return;
     setRecentColorIds((current) => [colorId, ...current.filter((id) => id !== colorId)].slice(0, 7));
+  }
+
+  function activateTool(nextTool: ToolId) {
+    const closingTextOptions = nextTool === 'text' && tool === 'text' && showTextOptions;
+    setTool(nextTool);
+    setShowPencilOptions(nextTool === 'pencil');
+    setShowEraserOptions(nextTool === 'eraser');
+    setShowRemoveOptions(nextTool === 'remove');
+    setShowMoveOptions(nextTool === 'move');
+    setShowMirrorOptions(nextTool === 'mirror');
+    setShowShapeOptions(nextTool === 'shape');
+    setShowTextOptions(nextTool === 'text' && !closingTextOptions);
+    setShowClipboardOptions(nextTool === 'copy' || nextTool === 'paste');
+    setShowPanOptions(nextTool === 'pan');
   }
 
   function updateCells(cells: Array<string | null>) {
@@ -1673,28 +1709,11 @@ export default function App() {
             aria-pressed={tool === item.id}
             type="button"
             onPointerDown={(event) => {
-              if (event.pointerType === 'mouse' && event.button !== 0) return;
-              setTool(item.id);
-              setShowPencilOptions(item.id === 'pencil');
-              setShowEraserOptions(item.id === 'eraser');
-              setShowRemoveOptions(item.id === 'remove');
-              setShowMoveOptions(item.id === 'move');
-              setShowMirrorOptions(item.id === 'mirror');
-              setShowShapeOptions(item.id === 'shape');
-              setShowClipboardOptions(item.id === 'copy' || item.id === 'paste');
-              setShowPanOptions(item.id === 'pan');
+              if (event.pointerType === 'mouse') return;
+              event.preventDefault();
+              activateTool(item.id);
             }}
-            onClick={() => {
-              setTool(item.id);
-              setShowPencilOptions(item.id === 'pencil');
-              setShowEraserOptions(item.id === 'eraser');
-              setShowRemoveOptions(item.id === 'remove');
-              setShowMoveOptions(item.id === 'move');
-              setShowMirrorOptions(item.id === 'mirror');
-              setShowShapeOptions(item.id === 'shape');
-              setShowClipboardOptions(item.id === 'copy' || item.id === 'paste');
-              setShowPanOptions(item.id === 'pan');
-            }}
+            onClick={() => activateTool(item.id)}
           >
             <ToolIcon tool={item.id} />
             <span>{text.tools[item.id].title}</span>
@@ -1941,6 +1960,96 @@ export default function App() {
             )}
           </div>
         )}
+        {tool === 'text' && showTextOptions && (
+          <div className="tool-options text-options">
+            <label className="text-tool-field">
+              <span className="text-field-title">
+                {text.textContent}
+                <button
+                  className="tool-options-close"
+                  type="button"
+                  aria-label={text.close}
+                  title={text.close}
+                  onClick={() => setShowTextOptions(false)}
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M7 7l10 10" />
+                    <path d="M17 7L7 17" />
+                  </svg>
+                </button>
+              </span>
+              <input
+                type="text"
+                maxLength={32}
+                value={textToolValue}
+                placeholder={text.textPlaceholder}
+                onChange={(event) => setTextToolValue(event.target.value)}
+              />
+            </label>
+            <div className="right-click-toggle compact" aria-label={text.textDirection}>
+              <span>{text.textDirection}</span>
+              <div>
+                {(['horizontal', 'vertical'] as TextDirection[]).map((direction) => (
+                  <button
+                    key={direction}
+                    className={textToolDirection === direction ? 'active' : ''}
+                    type="button"
+                    aria-pressed={textToolDirection === direction}
+                    onClick={() => setTextToolDirection(direction)}
+                  >
+                    {direction === 'horizontal' ? text.textHorizontal : text.textVertical}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="tool-options-header">
+              <span>{text.textSize}</span>
+              <label className="tool-number-field" aria-label={text.textSize}>
+                <input
+                  type="number"
+                  min={5}
+                  max={72}
+                  step={1}
+                  value={textToolSize}
+                  onChange={(event) => setTextToolSize(Math.min(72, Math.max(5, Number(event.target.value) || 5)))}
+                />
+                <span>{language === 'zh' ? '格' : 'cells'}</span>
+              </label>
+            </div>
+            <input
+              aria-label={text.textSize}
+              type="range"
+              min={5}
+              max={72}
+              step={1}
+              value={textToolSize}
+              onChange={(event) => setTextToolSize(Number(event.target.value))}
+            />
+            <div className="tool-options-header">
+              <span>{text.textSpacing}</span>
+              <label className="tool-number-field" aria-label={text.textSpacing}>
+                <input
+                  type="number"
+                  min={0}
+                  max={24}
+                  step={1}
+                  value={textToolSpacing}
+                  onChange={(event) => setTextToolSpacing(Math.min(24, Math.max(0, Number(event.target.value) || 0)))}
+                />
+                <span>{language === 'zh' ? '格' : 'cells'}</span>
+              </label>
+            </div>
+            <input
+              aria-label={text.textSpacing}
+              type="range"
+              min={0}
+              max={24}
+              step={1}
+              value={textToolSpacing}
+              onChange={(event) => setTextToolSpacing(Number(event.target.value))}
+            />
+          </div>
+        )}
         {tool === 'pan' && showPanOptions && (
           <div className="tool-options pan-options" onMouseLeave={() => setShowPanOptions(false)}>
             <div className="tool-options-header">
@@ -1966,6 +2075,11 @@ export default function App() {
         shapeKind={shapeKind}
         shapeFillMode={shapeFillMode}
         arrowKind={arrowKind}
+        textToolValue={textToolValue}
+        textToolDirection={textToolDirection}
+        textToolSize={textToolSize}
+        textToolSpacing={textToolSpacing}
+        onTextToolSizeChange={setTextToolSize}
         referenceImageUrl={referenceImageUrl}
         referenceImageVisible={referenceVisible && !isGenerating}
         referenceImageOpacity={referenceOpacity}
@@ -1983,6 +2097,7 @@ export default function App() {
           setShowMoveOptions(false);
           setShowMirrorOptions(false);
           setShowShapeOptions(false);
+          setShowTextOptions(tool === 'text');
           setShowClipboardOptions(false);
           setShowPanOptions(false);
           commitHistory();
@@ -2002,6 +2117,7 @@ export default function App() {
           setShowMoveOptions(false);
           setShowMirrorOptions(false);
           setShowShapeOptions(false);
+          setShowTextOptions(false);
           setShowClipboardOptions(false);
           setShowPanOptions(false);
           setNotice(text.copiedPattern(pattern.width, pattern.height, beads));
@@ -2021,6 +2137,7 @@ export default function App() {
           setShowMoveOptions(false);
           setShowMirrorOptions(false);
           setShowShapeOptions(false);
+          setShowTextOptions(false);
           setShowClipboardOptions(false);
           setShowPanOptions(false);
           setNotice(language === 'zh' ? '已从画布拾取颜色。' : 'Color picked from canvas.');
@@ -3144,6 +3261,15 @@ function ToolIcon({ tool }: { tool: ToolId }) {
         <path d="M4.5 16.5 9 8.5l4 7.5z" />
         <path d="M13.8 5.2h5v5h-5z" />
         <path d="M14.8 17.4a2.8 2.8 0 1 0 5.6 0 2.8 2.8 0 0 0-5.6 0z" />
+      </svg>
+    );
+  }
+  if (tool === 'text') {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M5 6h14" />
+        <path d="M12 6v12" />
+        <path d="M8.5 18h7" />
       </svg>
     );
   }

@@ -1,6 +1,6 @@
 export type BrandId = 'MARD';
 
-export type ToolId = 'pencil' | 'eraser' | 'fill' | 'remove' | 'recolor' | 'eyedropper' | 'move' | 'copy' | 'paste' | 'mirror' | 'shape' | 'pan';
+export type ToolId = 'pencil' | 'eraser' | 'fill' | 'remove' | 'recolor' | 'eyedropper' | 'move' | 'copy' | 'paste' | 'mirror' | 'shape' | 'text' | 'pan';
 
 export type ClipboardPattern = {
   width: number;
@@ -17,6 +17,7 @@ export type MirrorDirection = 'horizontal' | 'vertical';
 export type ShapeKind = 'line' | 'rectangle' | 'square' | 'ellipse' | 'circle' | 'triangle' | 'arrow';
 export type ShapeFillMode = 'outline' | 'filled';
 export type ArrowKind = 'single' | 'double' | 'block';
+export type TextDirection = 'horizontal' | 'vertical';
 
 export type PaletteColor = {
   id: string;

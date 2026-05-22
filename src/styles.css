@@ -1844,8 +1844,38 @@ button:focus-visible {
   padding: 9px;
 }
 
-.pan-options {
+.text-options {
   top: 725px;
+  width: 184px;
+}
+
+.tool-options-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 24px;
+  width: 24px;
+  min-width: 24px;
+  height: 24px;
+  min-height: 24px;
+  padding: 0;
+  border-color: rgba(190, 177, 154, 0.62);
+  border-radius: 8px;
+  color: #344044;
+}
+
+.tool-options-close svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.pan-options {
+  top: 790px;
   width: 168px;
 }
 
@@ -2032,6 +2062,68 @@ button:focus-visible {
   font-size: var(--font-size-tiny);
 }
 
+.text-tool-field {
+  display: grid;
+  gap: 6px;
+  color: var(--text);
+  font-size: var(--font-size-small);
+  font-weight: var(--weight-semibold);
+}
+
+.text-tool-field span {
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.text-tool-field .text-field-title {
+  position: relative;
+  display: grid;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+  color: var(--text-muted);
+  font-size: var(--font-size-small);
+  font-weight: var(--weight-semibold);
+}
+
+.text-field-title .tool-options-close {
+  position: absolute;
+  right: 0;
+}
+
+.text-tool-field input {
+  width: 100%;
+  height: 34px;
+  padding: 0 9px;
+  border: 1px solid rgba(190, 177, 154, 0.82);
+  border-radius: 8px;
+  background: #fffdf8;
+  color: var(--text);
+  font-size: var(--font-size-body);
+  font-weight: var(--weight-semibold);
+}
+
+.tool-number-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--text);
+  font-size: var(--font-size-small);
+  font-weight: var(--weight-semibold);
+}
+
+.tool-number-field input {
+  width: 40px;
+  height: 24px;
+  padding: 0 4px;
+  border: 1px solid rgba(190, 177, 154, 0.62);
+  border-radius: 7px;
+  background: #fffdf8;
+  color: var(--text);
+  font: inherit;
+  text-align: right;
+}
+
 .shape-picker {
   display: grid;
   gap: 8px;
@@ -2199,6 +2291,10 @@ button:focus-visible {
   cursor: crosshair;
 }
 
+.canvas[data-tool='text'] {
+  cursor: text;
+}
+
 .canvas[data-tool='pan'],
 .canvas.can-pan,
 .canvas.is-reference-adjusting {
@@ -2304,7 +2400,7 @@ button:focus-visible {
 
 .palette-section .palette-grid {
   flex: 0 0 auto;
-  max-height: clamp(250px, 42dvh, 480px);
+  max-height: clamp(250px, 36dvh, 398px);
   min-height: 0;
 }
 
