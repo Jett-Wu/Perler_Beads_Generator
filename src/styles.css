@@ -3224,6 +3224,53 @@ button:focus-visible {
   overscroll-behavior: contain;
 }
 
+.canvas-colors-section {
+  display: block;
+  flex: 0 0 auto;
+  min-height: 0;
+}
+
+.canvas-colors-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.canvas-colors-toggle::-webkit-details-marker {
+  display: none;
+}
+
+.canvas-colors-toggle::before {
+  content: '▸';
+  color: var(--text-muted);
+}
+
+.canvas-colors-section[open] > .canvas-colors-toggle::before {
+  content: '▾';
+}
+
+.canvas-colors-toggle h2 {
+  margin: 0;
+}
+
+.canvas-colors-toggle > span {
+  margin-left: auto;
+  color: var(--text-muted);
+  font-size: var(--font-size-small);
+}
+
+.canvas-colors-list {
+  flex: 0 0 auto;
+  max-height: 220px;
+  margin-top: 10px;
+}
+
+.canvas-colors-list button {
+  cursor: pointer;
+}
+
 .usage-list button {
   cursor: default;
   display: grid;

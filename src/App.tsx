@@ -2234,6 +2234,34 @@ export default function App() {
           <span className="status-pill">{text.tools[tool].title}</span>
         </section>
 
+        <details className="panel-section canvas-colors-section" open>
+          <summary className="canvas-colors-toggle">
+            <h2>{language === 'zh' ? '画布已用色号' : 'Colors used on canvas'}</h2>
+            <span>{usage.length} {language === 'zh' ? '色' : 'colors'}</span>
+          </summary>
+          <div className="usage-list canvas-colors-list">
+            {usage.map((row) => (
+              <button
+                key={row.color.id}
+                type="button"
+                onClick={() => selectColor(row.color.id)}
+                onMouseEnter={() => setHighlightedColorId(row.color.id)}
+                onMouseLeave={() => setHighlightedColorId(null)}
+              >
+                <span className="usage-chip" style={{ backgroundColor: row.color.hex }} />
+                <span className="usage-color-info">
+                  <strong>{displayCode(row.color)}</strong>
+                  <small>{displayName(row.color)}</small>
+                </span>
+                <span className="usage-count">
+                  <strong>{text.layerBeadCount(row.count)}</strong>
+                </span>
+              </button>
+            ))}
+            {usage.length === 0 && <div className="usage-empty">{text.noUsage}</div>}
+          </div>
+        </details>
+
         {rightTab === 'palette' && (
           <section className="panel-section panel-tab-body palette-section">
             <h2>{text.palette}</h2>
