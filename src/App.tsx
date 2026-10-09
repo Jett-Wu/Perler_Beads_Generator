@@ -443,20 +443,20 @@ const ui: Record<Language, any> = {
     },
 };
 
-const tools: Array<{ id: ToolId }> = [
-  { id: 'pencil' },
-  { id: 'eraser' },
-  { id: 'fill' },
-  { id: 'remove' },
-  { id: 'recolor' },
-  { id: 'eyedropper' },
-  { id: 'move' },
-  { id: 'copy' },
-  { id: 'paste' },
-  { id: 'mirror' },
-  { id: 'shape' },
-  { id: 'text' },
-  { id: 'pan' },
+const tools: Array<{ id: ToolId; shortcut: string }> = [
+  { id: 'pencil', shortcut: 'B' },
+  { id: 'eraser', shortcut: 'E' },
+  { id: 'fill', shortcut: 'G' },
+  { id: 'remove', shortcut: 'D' },
+  { id: 'recolor', shortcut: 'R' },
+  { id: 'eyedropper', shortcut: 'I' },
+  { id: 'move', shortcut: 'M' },
+  { id: 'copy', shortcut: 'C' },
+  { id: 'paste', shortcut: 'V' },
+  { id: 'mirror', shortcut: 'F' },
+  { id: 'shape', shortcut: 'U' },
+  { id: 'text', shortcut: 'T' },
+  { id: 'pan', shortcut: 'H' },
 ];
 
 function formatBrushSize(value: number): string {
@@ -784,6 +784,21 @@ export default function App() {
     setShowPanOptions(nextTool === 'pan');
   }
 
+  useEffect(() => {
+    function onToolKeyDown(event: KeyboardEvent) {
+      if (event.defaultPrevented || event.isComposing || event.repeat || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
+      const target = event.target;
+      if (target instanceof HTMLElement && (target.isContentEditable || target.closest('input, textarea, select, [role="textbox"]'))) return;
+
+      const nextTool = tools.find((item) => item.shortcut.toLowerCase() === event.key.toLowerCase());
+      if (!nextTool) return;
+      event.preventDefault();
+      if (nextTool.id !== tool) activateTool(nextTool.id);
+    }
+    window.addEventListener('keydown', onToolKeyDown);
+    return () => window.removeEventListener('keydown', onToolKeyDown);
+  }, [tool, showTextOptions]);
+
   function updateCells(cells: Array<string | null>) {
     updateProject(withCells(project, cells));
   }
@@ -902,6 +917,26 @@ export default function App() {
     setPast((items) => [...items, project]);
     updateProject(next);
   }
+
+  useEffect(() => {
+    function onHistoryKeyDown(event: KeyboardEvent) {
+      if (event.defaultPrevented || event.isComposing || event.altKey || !(event.ctrlKey || event.metaKey)) return;
+      const target = event.target;
+      if (target instanceof HTMLElement && (target.isContentEditable || target.closest('input, textarea, select, [role="textbox"]'))) return;
+
+      const key = event.key.toLowerCase();
+      if (key === 'z') {
+        event.preventDefault();
+        if (event.shiftKey) redo();
+        else undo();
+      } else if (key === 'y' && event.ctrlKey && !event.metaKey && !event.shiftKey) {
+        event.preventDefault();
+        redo();
+      }
+    }
+    window.addEventListener('keydown', onHistoryKeyDown);
+    return () => window.removeEventListener('keydown', onHistoryKeyDown);
+  }, [project, past, future]);
 
   function startBlank(width = 52, height = 52) {
     soloVisibilitySnapshotRef.current = null;
@@ -1402,13 +1437,6 @@ export default function App() {
           </div>
 
           <div className="topbar-command-zone">
-            <div className="topbar-actions project-actions">
-              <button className="project-action-button primary-action" onClick={() => startBlank(52, 52)}>{text.new}</button>
-              <button className="project-action-button" onClick={clearCanvas}>{text.clear}</button>
-              <span className="project-action-divider" aria-hidden="true" />
-              <button className="project-action-button history-action" onClick={undo} disabled={past.length === 0}>{text.undo}</button>
-              <button className="project-action-button history-action" onClick={redo} disabled={future.length === 0}>{text.redo}</button>
-            </div>
             <div className="topbar-actions export-actions">
               <div className="print-export-menu">
                 <button
@@ -1519,6 +1547,16 @@ export default function App() {
           </div>
         </div>
       </header>
+
+      <div className="project-toolbar" role="toolbar" aria-label={language === 'zh' ? '编辑操作' : 'Edit actions'}>
+            <div className="project-actions">
+              <button className="project-action-button primary-action" onClick={() => startBlank(52, 52)}>{text.new}</button>
+              <button className="project-action-button" onClick={clearCanvas}>{text.clear}</button>
+              <span className="project-action-divider" aria-hidden="true" />
+              <button className="project-action-button history-action" onClick={undo} disabled={past.length === 0} title={`${text.undo} (Ctrl+Z / ⌘Z)`} aria-keyshortcuts="Control+Z Meta+Z"><span className="history-action-icon" aria-hidden="true">↶</span><span>{text.undo}</span></button>
+              <button className="project-action-button history-action" onClick={redo} disabled={future.length === 0} title={`${text.redo} (Ctrl+Shift+Z / ⌘⇧Z / Ctrl+Y)`} aria-keyshortcuts="Control+Shift+Z Meta+Shift+Z Control+Y"><span className="history-action-icon" aria-hidden="true">↷</span><span>{text.redo}</span></button>
+            </div>
+      </div>
 
       <aside className="left-panel">
         <section className="left-card preview-card">
@@ -1706,6 +1744,8 @@ export default function App() {
             key={item.id}
             className={tool === item.id ? 'tool-button active' : 'tool-button'}
             aria-label={text.tools[item.id].title}
+            title={`${text.tools[item.id].title} (${item.shortcut}) — ${text.tools[item.id].hint}`}
+            aria-keyshortcuts={item.shortcut.toLowerCase()}
             aria-pressed={tool === item.id}
             type="button"
             onPointerDown={(event) => {
