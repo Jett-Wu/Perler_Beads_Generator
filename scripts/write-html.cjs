@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 const html = `<!doctype html>
-<html lang="en">
+<html lang="zh">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />

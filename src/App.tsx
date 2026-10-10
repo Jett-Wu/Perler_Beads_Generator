@@ -697,6 +697,7 @@ export default function App() {
 
   useEffect(() => {
     localStorage.setItem(languageKey, language);
+    document.documentElement.lang = language;
   }, [language]);
 
   useEffect(() => {
