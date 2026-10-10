@@ -701,6 +701,24 @@ export default function App() {
   }, [language]);
 
   useEffect(() => {
+    if (!showPrintExportPanel) return;
+    function onPrintExportKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') setShowPrintExportPanel(false);
+    }
+    function onPrintExportPointerDown(event: PointerEvent) {
+      const target = event.target;
+      if (target instanceof HTMLElement && target.closest('.print-export-menu')) return;
+      setShowPrintExportPanel(false);
+    }
+    window.addEventListener('keydown', onPrintExportKeyDown);
+    window.addEventListener('pointerdown', onPrintExportPointerDown);
+    return () => {
+      window.removeEventListener('keydown', onPrintExportKeyDown);
+      window.removeEventListener('pointerdown', onPrintExportPointerDown);
+    };
+  }, [showPrintExportPanel]);
+
+  useEffect(() => {
     return () => {
       if (pendingImageUrl) URL.revokeObjectURL(pendingImageUrl);
     };
@@ -941,9 +959,8 @@ export default function App() {
 
   function startBlank(width = 52, height = 52) {
     soloVisibilitySnapshotRef.current = null;
+    commitHistory();
     setProject(createProject(width, height));
-    setPast([]);
-    setFuture([]);
     setClipboardPattern(null);
     setCopySelectionIndices([]);
     resetAdjustments();
