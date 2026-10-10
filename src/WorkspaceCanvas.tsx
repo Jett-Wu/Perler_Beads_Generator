@@ -2254,14 +2254,15 @@ function drawPegboardBoundaries(context: CanvasRenderingContext2D, project: Bead
   context.save();
   context.strokeStyle = 'rgba(54, 102, 108, 0.32)';
   context.lineWidth = 1.25;
-  context.setLineDash([4, 6]);
-  verticalGuides.forEach((x) => {
+  verticalGuides.forEach((x, index) => {
+    context.setLineDash(index % 2 === 0 ? [] : [4, 6]);
     context.beginPath();
     context.moveTo(x, 0);
     context.lineTo(x, project.height * cellSize);
     context.stroke();
   });
-  horizontalGuides.forEach((y) => {
+  horizontalGuides.forEach((y, index) => {
+    context.setLineDash(index % 2 === 0 ? [] : [4, 6]);
     context.beginPath();
     context.moveTo(0, y);
     context.lineTo(project.width * cellSize, y);
