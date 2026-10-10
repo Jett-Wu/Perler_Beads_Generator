@@ -135,6 +135,14 @@ tsconfig.build.json       # 构建输出配置
 - JSON 编辑记录用于恢复可编辑项目，不是通用图片格式。
 - 应用以桌面端使用为主，并针对不同屏幕比例、分辨率和浏览器缩放做了响应式布局处理。
 
+## 贡献者
+
+感谢每一位让这个项目变得更好的人：
+
+- [@RunicBean](https://github.com/RunicBean)：编辑器快捷键、独立操作工具栏、画布已用色号面板（[PR #1](https://github.com/Jett-Wu/Perler_Beads_Generator/pull/1)）
+
+欢迎提交 Issue 或 Pull Request 一起改进。
+
 ---
 
 # Perler Beads Generator
@@ -273,3 +281,11 @@ tsconfig.build.json       # Build output config
 - Image conversion samples the image area covered by each bead cell instead of reading only a single pixel.
 - JSON edit records are for restoring editable projects, not for general image exchange.
 - The app is desktop-first and includes responsive layout handling for different screen ratios, resolutions, and browser zoom levels.
+
+## Contributors
+
+Thanks to everyone who makes this project better:
+
+- [@RunicBean](https://github.com/RunicBean): editor keyboard shortcuts, a separate action toolbar, and the on-canvas color usage panel ([PR #1](https://github.com/Jett-Wu/Perler_Beads_Generator/pull/1))
+
+Issues and pull requests are welcome.
