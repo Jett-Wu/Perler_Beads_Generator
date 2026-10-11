@@ -35,6 +35,8 @@
   --weight-medium: 500;
   --weight-semibold: 600;
   --weight-bold: 700;
+  --ease-out: cubic-bezier(0.32, 0.72, 0, 1);
+  --dur-enter: 180ms;
   font-family:
     var(--font-ui);
   font-synthesis: none;
@@ -45,6 +47,45 @@
 
 * {
   box-sizing: border-box;
+}
+
+/* ---------------------------------------------------------------------------
+   Motion
+
+   One entrance only: popovers scale+fade in from the control that opened them,
+   so a floating panel reads as coming from somewhere instead of appearing out
+   of nothing. Capped at 180ms so it never delays the user. No other UI motion
+   is added.
+   --------------------------------------------------------------------------- */
+
+@keyframes panel-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Honour the OS "reduce motion" setting. This also stops the pre-existing
+   infinite uploadGenerating shimmer, which is exactly the kind of continuous
+   animation that setting exists to suppress. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .upload-zone.is-generating {
+    animation: none !important;
+  }
 }
 
 body {
@@ -652,6 +693,8 @@ button:focus-visible {
   border-radius: 12px;
   background: rgba(255, 253, 248, 0.98);
   box-shadow: var(--shadow-pop);
+  transform-origin: top right;
+  animation: panel-enter var(--dur-enter) var(--ease-out) both;
 }
 
 .print-export-popover-header {
@@ -1832,6 +1875,8 @@ button:focus-visible {
   border-radius: 9px;
   background: rgba(255, 253, 248, 0.96);
   box-shadow: 0 12px 28px rgba(43, 34, 22, 0.12);
+  transform-origin: left center;
+  animation: panel-enter var(--dur-enter) var(--ease-out) both;
 }
 
 .pencil-options {
