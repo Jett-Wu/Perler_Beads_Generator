@@ -1567,8 +1567,8 @@ export default function App() {
 
       <div className="project-toolbar" role="toolbar" aria-label={language === 'zh' ? '编辑操作' : 'Edit actions'}>
             <div className="project-actions">
-              <button className="project-action-button primary-action" onClick={() => startBlank(52, 52)}>{text.new}</button>
-              <button className="project-action-button" onClick={clearCanvas}>{text.clear}</button>
+              <button className="project-action-button primary-action" onClick={() => startBlank(52, 52)}><PlusIcon /><span>{text.new}</span></button>
+              <button className="project-action-button" onClick={clearCanvas}><TrashIcon /><span>{text.clear}</span></button>
               <span className="project-action-divider" aria-hidden="true" />
               <button className="project-action-button history-action" onClick={undo} disabled={past.length === 0} title={`${text.undo} (Ctrl+Z / ⌘Z)`} aria-keyshortcuts="Control+Z Meta+Z"><span className="history-action-icon" aria-hidden="true">↶</span><span>{text.undo}</span></button>
               <button className="project-action-button history-action" onClick={redo} disabled={future.length === 0} title={`${text.redo} (Ctrl+Shift+Z / ⌘⇧Z / Ctrl+Y)`} aria-keyshortcuts="Control+Shift+Z Meta+Shift+Z Control+Y"><span className="history-action-icon" aria-hidden="true">↷</span><span>{text.redo}</span></button>
@@ -3112,6 +3112,15 @@ function hslToRgb(hue: number, saturation: number, lightness: number): [number, 
 function clampInteger(value: number, min: number, max: number): number {
   if (Number.isNaN(value)) return min;
   return Math.min(max, Math.max(min, Math.round(value)));
+}
+
+function PlusIcon() {
+  return (
+    <svg viewBox="0 0 20 20" aria-hidden="true">
+      <path d="M10 4.5v11" />
+      <path d="M4.5 10h11" />
+    </svg>
+  );
 }
 
 function ExportIcon() {

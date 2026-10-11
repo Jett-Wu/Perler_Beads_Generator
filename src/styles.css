@@ -577,6 +577,10 @@ button:focus-visible {
 }
 
 .project-action-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
   min-width: 46px;
   height: 30px;
   min-height: 30px;
@@ -585,6 +589,17 @@ button:focus-visible {
   background: rgba(255, 255, 255, 0.92);
   color: #1f2937;
   font-weight: var(--weight-medium);
+}
+
+.project-action-button svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .project-action-button.primary-action {
