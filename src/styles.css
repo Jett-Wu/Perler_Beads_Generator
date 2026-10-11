@@ -235,7 +235,7 @@ button:focus-visible {
 .topbar {
   grid-column: 1 / -1;
   display: grid;
-  grid-template-columns: 300px minmax(0, 1fr) max-content;
+  grid-template-columns: 300px minmax(0, 1fr) 300px;
   align-items: center;
   column-gap: 12px;
   row-gap: 8px;
@@ -328,6 +328,7 @@ button:focus-visible {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: center;
   gap: 10px;
   min-width: 0;
   padding: 0;
@@ -336,7 +337,7 @@ button:focus-visible {
 .topbar-command-zone {
   display: flex;
   flex-wrap: wrap;
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   align-items: center;
   justify-content: flex-start;
   gap: 10px;
@@ -559,6 +560,7 @@ button:focus-visible {
 .project-actions {
   display: flex;
   align-items: center;
+  justify-content: center;
   flex-wrap: wrap;
   flex: 0 0 auto;
   gap: 5px;
@@ -925,7 +927,7 @@ button:focus-visible {
 
 @media (max-width: 1500px) {
   .topbar {
-    grid-template-columns: minmax(178px, 230px) minmax(0, 1fr) max-content;
+    grid-template-columns: minmax(178px, 230px) minmax(0, 1fr) minmax(178px, 230px);
     column-gap: 10px;
     padding-inline: 10px;
   }
