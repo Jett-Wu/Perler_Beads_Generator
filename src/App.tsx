@@ -1570,8 +1570,8 @@ export default function App() {
               <button className="project-action-button primary-action" onClick={() => startBlank(52, 52)}><PlusIcon /><span>{text.new}</span></button>
               <button className="project-action-button" onClick={clearCanvas}><TrashIcon /><span>{text.clear}</span></button>
               <span className="project-action-divider" aria-hidden="true" />
-              <button className="project-action-button history-action" onClick={undo} disabled={past.length === 0} title={`${text.undo} (Ctrl+Z / ⌘Z)`} aria-keyshortcuts="Control+Z Meta+Z"><span className="history-action-icon" aria-hidden="true">↶</span><span>{text.undo}</span></button>
-              <button className="project-action-button history-action" onClick={redo} disabled={future.length === 0} title={`${text.redo} (Ctrl+Shift+Z / ⌘⇧Z / Ctrl+Y)`} aria-keyshortcuts="Control+Shift+Z Meta+Shift+Z Control+Y"><span className="history-action-icon" aria-hidden="true">↷</span><span>{text.redo}</span></button>
+              <button className="project-action-button history-action" onClick={undo} disabled={past.length === 0} title={`${text.undo} (Ctrl+Z / ⌘Z)`} aria-keyshortcuts="Control+Z Meta+Z"><UndoIcon /><span>{text.undo}</span></button>
+              <button className="project-action-button history-action" onClick={redo} disabled={future.length === 0} title={`${text.redo} (Ctrl+Shift+Z / ⌘⇧Z / Ctrl+Y)`} aria-keyshortcuts="Control+Shift+Z Meta+Shift+Z Control+Y"><RedoIcon /><span>{text.redo}</span></button>
             </div>
       </div>
 
@@ -3119,6 +3119,24 @@ function PlusIcon() {
     <svg viewBox="0 0 20 20" aria-hidden="true">
       <path d="M10 4.5v11" />
       <path d="M4.5 10h11" />
+    </svg>
+  );
+}
+
+function UndoIcon() {
+  return (
+    <svg viewBox="0 0 20 20" aria-hidden="true">
+      <path d="M7.5 4.5 4 8l3.5 3.5" />
+      <path d="M4 8h7.2a4 4 0 0 1 0 8H8.6" />
+    </svg>
+  );
+}
+
+function RedoIcon() {
+  return (
+    <svg viewBox="0 0 20 20" aria-hidden="true">
+      <path d="M12.5 4.5 16 8l-3.5 3.5" />
+      <path d="M16 8H8.8a4 4 0 0 0 0 8h2.6" />
     </svg>
   );
 }

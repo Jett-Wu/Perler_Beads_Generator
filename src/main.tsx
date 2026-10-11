@@ -14,9 +14,10 @@ class AppErrorBoundary extends React.Component<React.PropsWithChildren, AppError
       return (
         <main className="app-fallback">
           <h1>Perler Beads Generator</h1>
-          <p>页面加载时遇到一个问题。</p>
+          <p>出错了，请重新加载页面。</p>
+          <p className="app-fallback-en">Something went wrong. Please reload the page.</p>
           <pre>{this.state.error.message}</pre>
-          <button onClick={() => window.location.reload()}>重新加载</button>
+          <button onClick={() => window.location.reload()}>重新加载 / Reload</button>
         </main>
       );
     }
