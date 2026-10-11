@@ -1127,9 +1127,8 @@ export default function App() {
       throw new Error(text.invalidRecord);
     }
     soloVisibilitySnapshotRef.current = null;
+    commitHistory();
     setProject(normalizeProject(imported));
-    setPast([]);
-    setFuture([]);
     setPendingFile(null);
     setPendingImageUrl((current) => {
       if (current) URL.revokeObjectURL(current);
