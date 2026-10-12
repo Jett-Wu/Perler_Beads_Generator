@@ -574,6 +574,11 @@ export default function App() {
   const [highlightedColorId, setHighlightedColorId] = useState<string | null>(null);
   const [showIsolatedBeads, setShowIsolatedBeads] = useState(false);
   const [rightTab, setRightTab] = useState<'palette' | 'layers' | 'usage' | 'adjustments'>('palette');
+  const [colorCodeInput, setColorCodeInput] = useState('');
+  const colorCodeInputRef = useRef('');
+  const [colorCodeMode, setColorCodeMode] = useState(false);
+  const colorCodeModeRef = useRef(false);
+  const colorCodeOriginalRef = useRef(selectedColorId);
   const [editingLayerId, setEditingLayerId] = useState<string | null>(null);
   const [editingLayerName, setEditingLayerName] = useState('');
   const [draggingLayerId, setDraggingLayerId] = useState<string | null>(null);
@@ -804,19 +809,82 @@ export default function App() {
   }
 
   useEffect(() => {
-    function onToolKeyDown(event: KeyboardEvent) {
-      if (event.defaultPrevented || event.isComposing || event.repeat || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
-      const target = event.target;
-      if (target instanceof HTMLElement && (target.isContentEditable || target.closest('input, textarea, select, [role="textbox"]'))) return;
+    function clearColorInput() {
+      colorCodeModeRef.current = false;
+      colorCodeInputRef.current = '';
+      setColorCodeMode(false);
+      setColorCodeInput('');
+    }
 
+    function updateColorInput(code: string) {
+      colorCodeInputRef.current = code;
+      setColorCodeInput(code);
+      const color = completePalette.find((item) => item.primaryCode === code);
+      if (color) {
+        selectColor(color.id, { updateRecent: false });
+        setNotice(language === 'zh' ? `已选择色号 ${code}。` : `Selected color ${code}.`);
+      }
+    }
+
+    function onToolKeyDown(event: KeyboardEvent) {
+      if (event.defaultPrevented || event.isComposing || event.repeat) return;
+      if (event.ctrlKey || event.metaKey || event.altKey) {
+        clearColorInput();
+        return;
+      }
+      const target = event.target;
+      if (target instanceof HTMLElement && (target.isContentEditable || target.closest('input, textarea, select, [role="textbox"]'))) {
+        clearColorInput();
+        return;
+      }
+      if (event.key === '/' && !event.shiftKey) {
+        event.preventDefault();
+        if (!colorCodeModeRef.current) colorCodeOriginalRef.current = selectedColorId;
+        colorCodeModeRef.current = true;
+        setColorCodeMode(true);
+        updateColorInput('');
+        return;
+      }
+      if (colorCodeModeRef.current) {
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          selectColor(colorCodeOriginalRef.current, { updateRecent: false });
+          clearColorInput();
+        } else if (event.key === 'Enter') {
+          event.preventDefault();
+          const code = colorCodeInputRef.current;
+          const color = completePalette.find((item) => item.primaryCode === code);
+          if (color) {
+            selectColor(color.id);
+            clearColorInput();
+          } else {
+            setNotice(language === 'zh' ? `未找到色号 ${code}，请继续输入或按 Esc 取消。` : `Color ${code} not found. Continue typing or press Esc.`);
+          }
+        } else if (event.key === 'Backspace') {
+          event.preventDefault();
+          updateColorInput(colorCodeInputRef.current.slice(0, -1));
+        } else if (/^[a-z0-9]$/i.test(event.key)) {
+          event.preventDefault();
+          const key = event.key.toUpperCase();
+          const current = colorCodeInputRef.current;
+          const next = /^[A-Z]$/.test(key) && /\d/.test(current) ? key : current + key;
+          if (/^[A-Z]{0,2}\d{0,3}$/.test(next)) updateColorInput(next);
+        }
+        return;
+      }
+      if (event.shiftKey) return;
       const nextTool = tools.find((item) => item.shortcut.toLowerCase() === event.key.toLowerCase());
       if (!nextTool) return;
       event.preventDefault();
       if (nextTool.id !== tool) activateTool(nextTool.id);
     }
     window.addEventListener('keydown', onToolKeyDown);
-    return () => window.removeEventListener('keydown', onToolKeyDown);
-  }, [tool, showTextOptions]);
+    window.addEventListener('pointerdown', clearColorInput);
+    return () => {
+      window.removeEventListener('keydown', onToolKeyDown);
+      window.removeEventListener('pointerdown', clearColorInput);
+    };
+  }, [tool, showTextOptions, language, selectedColorId]);
 
   function updateCells(cells: Array<string | null>) {
     updateProject(withCells(project, cells));
@@ -2278,6 +2346,12 @@ export default function App() {
             {usage.length === 0 && <div className="usage-empty">{text.noUsage}</div>}
           </div>
         </details>
+
+        <div className="color-code-shortcut" role="status">
+          {colorCodeMode
+            ? (language === 'zh' ? `输入色号：${colorCodeInput || '…'} · 即时选色 / Enter 完成 / Esc 取消` : `Color code: ${colorCodeInput || '…'} · Live selection / Enter to finish / Esc to cancel`)
+            : (language === 'zh' ? '快捷选色：按 / 后输入 A3、A19 等色号' : 'Quick color: press / then type A3 or A19')}
+        </div>
 
         {rightTab === 'palette' && (
           <section className="panel-section panel-tab-body palette-section">

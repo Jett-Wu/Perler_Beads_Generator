@@ -3295,6 +3295,13 @@ button:focus-visible {
   min-height: 0;
 }
 
+.color-code-shortcut {
+  padding: 8px 12px;
+  color: var(--text-muted);
+  font-size: var(--font-size-small);
+  font-variant-numeric: tabular-nums;
+}
+
 .canvas-colors-toggle {
   display: flex;
   align-items: center;
