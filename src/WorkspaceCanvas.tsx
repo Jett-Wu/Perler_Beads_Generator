@@ -76,6 +76,7 @@ type Props = {
   onPickColor: (colorId: string) => void;
   onHover: (cell: HoverCell | null) => void;
   fitLabel: string;
+  emptyLabel: string;
   canEdit: boolean;
   lockedHint: string;
 };
@@ -122,6 +123,7 @@ export default function WorkspaceCanvas({
   onPickColor,
   onHover,
   fitLabel,
+  emptyLabel,
   canEdit,
   lockedHint,
 }: Props) {
@@ -132,6 +134,17 @@ export default function WorkspaceCanvas({
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isSpaceDown, setIsSpaceDown] = useState(false);
   const [hoverPoint, setHoverPoint] = useState<PointerGridPoint | null>(null);
+  const [pointerPressed, setPointerPressed] = useState(false);
+  const [inspectCell, setInspectCell] = useState<{ x: number; y: number } | null>(null);
+  const hoverX = hoverPoint?.cell?.x;
+  const hoverY = hoverPoint?.cell?.y;
+
+  useEffect(() => {
+    setInspectCell(null);
+    if (tool !== 'pencil' || pointerPressed || isSpaceDown || referenceImageAdjusting || hoverX === undefined || hoverY === undefined) return;
+    const timer = window.setTimeout(() => setInspectCell({ x: hoverX, y: hoverY }), 2000);
+    return () => window.clearTimeout(timer);
+  }, [tool, pointerPressed, isSpaceDown, referenceImageAdjusting, hoverX, hoverY, zoom, pan, project.width, project.height]);
   const [shapeDraft, setShapeDraft] = useState<ShapeDraft | null>(null);
   const [referenceImage, setReferenceImage] = useState<HTMLImageElement | null>(null);
   const [activePointerMode, setActivePointerMode] = useState<'pan' | 'rightErase' | 'move' | 'shape' | 'reference' | null>(null);
@@ -261,6 +274,8 @@ export default function WorkspaceCanvas({
   }, [project, cellSize, zoom, pan, highlightedColorId, highlightedCellIndices, tool, selectedColorId, eraserSize, moveMode, removeMode, mirrorMode, clipboardPattern, copyMode, copySelectionIndices, shapeKind, shapeDraft, hoverPoint, canEdit, referenceImageOptions, textToolValue, textToolDirection, textToolSize, textToolSpacing, formatColorCode]);
 
   function handlePointerDown(event: React.PointerEvent<HTMLCanvasElement>) {
+    setPointerPressed(true);
+    setInspectCell(null);
     const point = canvasToGridPoint(event.clientX, event.clientY);
     const cell = point?.cell ?? null;
     const rightClickAction = tool === 'pencil' ? project.settings.rightClickAction : 'pan';
@@ -554,6 +569,8 @@ export default function WorkspaceCanvas({
   }
 
   function handlePointerUp(event: React.PointerEvent<HTMLCanvasElement>) {
+    setPointerPressed(false);
+    setHoverPoint(event.type === 'pointercancel' ? null : canvasToGridPoint(event.clientX, event.clientY));
     if (pointerRef.current.shaping) {
       const draft = shapeDraft ?? {
         kind: shapeKind,
@@ -591,6 +608,7 @@ export default function WorkspaceCanvas({
   }
 
   function handleWheel(event: React.WheelEvent<HTMLCanvasElement>) {
+    setHoverPoint(null);
     event.preventDefault();
     if (tool === 'text') {
       const nextSize = Math.min(72, Math.max(5, textToolSize + (event.deltaY > 0 ? -1 : 1)));
@@ -790,6 +808,22 @@ export default function WorkspaceCanvas({
         onPointerLeave={handlePointerLeave}
         onWheel={handleWheel}
       />
+      {inspectCell && tool === 'pencil' && !pointerPressed && !isSpaceDown && !referenceImageAdjusting && inspectCell.x === hoverX && inspectCell.y === hoverY && (
+        <div
+          className="canvas-cell-tooltip"
+          role="tooltip"
+          style={{
+            left: Math.max(8, Math.min(pan.x + (inspectCell.x + 1) * cellSize * zoom + 12, (wrapperRef.current?.clientWidth ?? 200) - 178)),
+            top: Math.max(8, Math.min(pan.y + inspectCell.y * cellSize * zoom, (wrapperRef.current?.clientHeight ?? 100) - 72)),
+          }}
+        >
+          <strong>{(() => {
+            const color = getColor(getTopVisibleColor(project, inspectCell.y * project.width + inspectCell.x));
+            return color ? (formatColorCode?.(color.id) ?? color.primaryCode) : emptyLabel;
+          })()}</strong>
+          <span>R{inspectCell.y + 1} C{inspectCell.x + 1}</span>
+        </div>
+      )}
       <div className="board-chip">
         {project.width} * {project.height}
       </div>
@@ -2248,21 +2282,21 @@ function drawCoordinates(context: CanvasRenderingContext2D, project: BeadProject
 }
 
 function drawPegboardBoundaries(context: CanvasRenderingContext2D, project: BeadProject, cellSize: number): void {
-  const verticalGuides = guideLineCenters(project.width, project.boardSettings.boardWidth, cellSize);
-  const horizontalGuides = guideLineCenters(project.height, project.boardSettings.boardHeight, cellSize);
+  const verticalGuides = guideLineCenters(project.width, cellSize);
+  const horizontalGuides = guideLineCenters(project.height, cellSize);
 
   context.save();
   context.strokeStyle = 'rgba(54, 102, 108, 0.32)';
   context.lineWidth = 1.25;
   verticalGuides.forEach((x, index) => {
-    context.setLineDash(index % 2 === 0 ? [] : [4, 6]);
+    context.setLineDash((index + 1) % 2 === 0 ? [] : [4, 6]);
     context.beginPath();
     context.moveTo(x, 0);
     context.lineTo(x, project.height * cellSize);
     context.stroke();
   });
   horizontalGuides.forEach((y, index) => {
-    context.setLineDash(index % 2 === 0 ? [] : [4, 6]);
+    context.setLineDash((index + 1) % 2 === 0 ? [] : [4, 6]);
     context.beginPath();
     context.moveTo(0, y);
     context.lineTo(project.width * cellSize, y);
@@ -2272,19 +2306,12 @@ function drawPegboardBoundaries(context: CanvasRenderingContext2D, project: Bead
   context.restore();
 }
 
-function guideLineCenters(totalCells: number, boardCells: number, cellSize: number): number[] {
-  const centers = new Set<number>();
-  const boardSize = Math.max(1, boardCells);
-  for (let boardStart = 0; boardStart < totalCells; boardStart += boardSize) {
-    const segmentLength = Math.min(boardSize, totalCells - boardStart);
-    for (let offset = 1; offset < segmentLength; offset += 5) {
-      centers.add((boardStart + offset) * cellSize);
-    }
-    if (segmentLength > 1) {
-      centers.add((boardStart + segmentLength - 1) * cellSize);
-    }
+function guideLineCenters(totalCells: number, cellSize: number): number[] {
+  const centers: number[] = [];
+  for (let boundary = 5; boundary < totalCells; boundary += 5) {
+    centers.push(boundary * cellSize);
   }
-  return [...centers].sort((a, b) => a - b);
+  return centers;
 }
 
 function drawBeadStack(

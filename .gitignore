@@ -12,6 +12,7 @@ generated/*
 .npm/
 
 # Logs
+logs/
 *.log
 *.err
 npm-debug.log*
