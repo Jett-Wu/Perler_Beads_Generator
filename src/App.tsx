@@ -2201,6 +2201,7 @@ export default function App() {
         }}
         onHover={setHoverCell}
         fitLabel={text.fit}
+        emptyLabel={text.empty}
         canEdit={!activeLayer.locked}
         lockedHint={text.lockedCanvasHint}
       />

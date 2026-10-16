@@ -2566,6 +2566,23 @@ button:focus-visible {
   font-weight: var(--weight-medium);
 }
 
+.canvas-cell-tooltip {
+  position: absolute;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 170px;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(17, 24, 39, 0.94);
+  color: #fff;
+  font-size: 12px;
+  box-shadow: 0 4px 14px rgba(17, 24, 39, 0.18);
+  pointer-events: none;
+}
+
 .board-chip {
   position: absolute;
   left: 14px;
